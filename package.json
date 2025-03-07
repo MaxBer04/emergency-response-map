@@ -1,0 +1,15 @@
+{
+  "name": "emergency-response-map",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build-images": "docker build --target dev -t emergency-response-map/frontend-dev:latest ./frontend && docker build --target prod -t emergency-response-map/frontend-prod:latest ./frontend && docker build -t emergency-response-map/api-gateway:latest ./backend/api-gateway && docker build -t emergency-response-map/isochrone-service:latest ./backend/isochrone-service && docker build -t emergency-response-map/database-service:latest ./database",
+    "dev": "NODE_ENV=dev node deploy.js",
+    "prod": "NODE_ENV=prod node deploy.js",
+    "watch": "kubectl port-forward svc/frontend 8080:80"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "yaml": "^2.7.0"
+  }
+}

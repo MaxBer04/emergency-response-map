@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+data:
+  API_GATEWAY_URL: "http://api-gateway:3000"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: emergency-response-map/frontend:latest # This will be replaced by deploy.js
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3001 # This may be adjusted by deploy.js for prod
+          env:
+            - name: NODE_ENV
+              value: "dev" # This will be overridden in deploy.js
+            - name: VITE_DEV_SERVER_PORT
+              value: "3001"
+            - name: VITE_API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: frontend-config
+                  key: API_GATEWAY_URL
+            - name: VITE_GOOGLE_MAPS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: isochrone-service-secrets
+                  key: GOOGLE_MAPS_API_KEY
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          # DEV_VOLUME_MOUNTS
+      # DEV_VOLUMES
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 3001 # This will be overridden in deploy.js for prod
+  type: LoadBalancer

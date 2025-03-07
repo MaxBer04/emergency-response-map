@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: isochrone-service-config
+data:
+  PORT: "3020"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_DATABASE: "emergency_response_map"
+  DB_SSL: "false"
+  ISOCHRONE_MAX_GRID_RADIUS: "30"
+  ISOCHRONE_GRID_RESOLUTION: "3"
+  ISOCHRONE_CACHE_DURATION: "3600"
+  ISOCHRONE_MAX_BATCH_SIZE: "25"
+  ISOCHRONE_SMOOTHING_FACTOR: "0.3"
+  GOOGLE_MAPS_TIMEOUT_MS: "5000"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: isochrone-service-secrets
+type: Opaque
+data:
+  DB_USER: cG9zdGdyZXM= # postgres in base64
+  DB_PASSWORD: c29tZXBhc3N3b3Jk # somepassword in base64
+  GOOGLE_MAPS_API_KEY: QUl6YVN5RE5BYy1HZ3MwSmRTU2pQeVcyZXVJRUF0MWkzd2E1UnNj # google_maps_api_key in base64
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: isochrone-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: isochrone-service
+  template:
+    metadata:
+      labels:
+        app: isochrone-service
+    spec:
+      containers:
+        - name: isochrone-service
+          image: emergency-response-map/isochrone-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3020
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: PORT
+            - name: NODE_ENV
+              value: "dev"
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: DB_PORT
+            - name: DB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: DB_DATABASE
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: isochrone-service-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: isochrone-service-secrets
+                  key: DB_PASSWORD
+            - name: DB_SSL
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: DB_SSL
+            - name: GOOGLE_MAPS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: isochrone-service-secrets
+                  key: GOOGLE_MAPS_API_KEY
+            - name: GOOGLE_MAPS_TIMEOUT_MS
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: GOOGLE_MAPS_TIMEOUT_MS
+            - name: ISOCHRONE_MAX_GRID_RADIUS
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: ISOCHRONE_MAX_GRID_RADIUS
+            - name: ISOCHRONE_GRID_RESOLUTION
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: ISOCHRONE_GRID_RESOLUTION
+            - name: ISOCHRONE_CACHE_DURATION
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: ISOCHRONE_CACHE_DURATION
+            - name: ISOCHRONE_MAX_BATCH_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: ISOCHRONE_MAX_BATCH_SIZE
+            - name: ISOCHRONE_SMOOTHING_FACTOR
+              valueFrom:
+                configMapKeyRef:
+                  name: isochrone-service-config
+                  key: ISOCHRONE_SMOOTHING_FACTOR
+          livenessProbe:
+            httpGet:
+              path: /api/isochrones/health
+              port: 3020
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/isochrones/health
+              port: 3020
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          # DEV_VOLUME_MOUNTS
+      # DEV_VOLUMES
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: isochrone-service
+spec:
+  selector:
+    app: isochrone-service
+  ports:
+    - port: 3020
+      targetPort: 3020
+  type: ClusterIP
