@@ -9,10 +9,7 @@ The Emergency Response Map API enables visualization of accessibility areas (iso
 To start the Emergency Response Map project in development mode, first ensure you have Docker Desktop with Kubernetes enabled and Bun installed. Clone the repository and navigate to the project root. Run `npm install` to install dependencies. Next, build the Docker images with
 
 ```bash
-docker build -t emergency-response-map/frontend:latest ./frontend
-docker build -t emergency-response-map/api-gateway:latest ./backend/api-gateway
-docker build -t emergency-response-map/isochrone-service:latest ./backend/isochrone-service
-docker build -t emergency-response-map/database-service:latest ./database
+npm run build-images
 ```
 
 Then start the development environment by running:
@@ -21,13 +18,13 @@ Then start the development environment by running:
 npm run dev
 ```
 
-Finally, access the application by forwarding the frontend service port with:
+Finally, to check the production ready version of the app use:
 
 ```bash
-npm run watch
+npm run prod
 ```
 
-The application will hot reload as you make changes to the source code, enabling a smooth development experience within the Kubernetes environment.
+The application will hot reload in dev mode for ALL services as you make changes to the source code, enabling a smooth development experience within the Kubernetes environment.
 
 ## Basic Concepts
 
@@ -53,7 +50,7 @@ Areas that are reachable within a certain time from a facility with a specific v
 
 #### 1.1 Retrieve Available Regions
 
-```
+```REST
 GET /api/regions
 ```
 
