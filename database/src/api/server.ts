@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
+import pino from "pino";
 import routes from "./routes.js";
 import logger from "../utils/logger.js";
 import config from "../config/index";
@@ -23,6 +24,39 @@ export const createServer = () => {
         return {
           service: "database-service",
         };
+      },
+      customLogLevel: (req, res, err) => {
+        if (req.url.includes("/health")) {
+          // Only log health checks at 'trace' level (unless they fail)
+          return res.statusCode >= 400 ? "warn" : "trace";
+        }
+        if (res.statusCode >= 500) return "error";
+        if (res.statusCode >= 400) return "warn";
+        return "info";
+      },
+      // Optional: Customize what gets logged for different endpoints
+      customSuccessMessage: (req, res) => {
+        if (req.url.includes("/health")) {
+          return "Health check OK";
+        }
+        return `${req.method} ${req.url} completed`;
+      },
+      customErrorMessage: (req, res, err) => {
+        return `${req.method} ${req.url} failed: ${err.message}`;
+      },
+      // Optional: Customize what fields get included in logs
+      serializers: {
+        req: (req) => {
+          // For health checks, return minimal info
+          if (req.url.includes("/health")) {
+            return {
+              method: req.method,
+              url: req.url,
+            };
+          }
+          // For other requests, return standard info
+          return pino.stdSerializers.req(req);
+        },
       },
     })
   );

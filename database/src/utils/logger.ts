@@ -4,17 +4,23 @@ import config from "../config/index.js";
 // Define the configuration type with all possible properties
 const loggerConfig: pino.LoggerOptions = {
   level: config.nodeEnv === "prod" ? "info" : "debug",
-};
 
-// Add transport only in development mode
-if (config.nodeEnv !== "prod") {
-  loggerConfig.transport = {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-    },
-  };
-}
+  redact: ["password", "secret", "key"],
+
+  transport:
+    config.nodeEnv !== "prod"
+      ? {
+          target: "pino-pretty",
+          options: {
+            colorize: true,
+            translateTime: "SYS:standard",
+            ignore: "pid,hostname",
+            messageFormat: "{msg}",
+            singleLine: true,
+          },
+        }
+      : undefined,
+};
 
 // Logger-Instanz erstellen
 const logger = pino(loggerConfig);
