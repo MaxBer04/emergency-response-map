@@ -5,6 +5,7 @@ import MigrationService from "../services/migrationService";
 import logger from "../utils/logger.js";
 import * as facilityTypesController from "../controllers/facilityTypes";
 import * as facilitiesController from "../controllers/facilities";
+import * as vehicleTypesController from "../controllers/vehicleTypes";
 
 const router = express.Router();
 
@@ -75,5 +76,7 @@ router.post("/seed", async (req: express.Request, res: express.Response) => {
 router.get("/facility-types", facilityTypesController.getFacilityTypes);
 router.get("/facilities", facilitiesController.getFacilities);
 router.get("/facilites/:id", facilitiesController.getFacilityById);
+
+router.get("/vehicle-types", vehicleTypesController.getVehicleTypes);
 
 export default router;
